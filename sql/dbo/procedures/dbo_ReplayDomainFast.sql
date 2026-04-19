@@ -24,22 +24,12 @@ BEGIN
     IF @Times < 1 OR @Times > 1000
         THROW 50000, N'Times must be between 1 and 1000.', 1;
 
-    -- Get contract JSON directly from the procedure result
-    DECLARE @ContractJson NVARCHAR(MAX);
-    
-    -- Create temp table to capture result (avoids nested INSERT EXEC issue)
-    CREATE TABLE #ContractResult (ContractJson NVARCHAR(MAX));
-    
-    INSERT INTO #ContractResult (ContractJson)
-    EXEC dbo.GenerateDomainContractJson 
-        @RunID = @SourceRunID,
-        @ObjectKey = @ObjectKey;
-    
-    SELECT @ContractJson = ContractJson FROM #ContractResult;
-    DROP TABLE #ContractResult;
-
-    IF @ContractJson IS NULL
-        THROW 50000, N'Failed to generate contract JSON.', 1;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.MigrationDomainField
+        WHERE ObjectKey = @ObjectKey
+    )
+        THROW 50000, N'ObjectKey has no configured domain fields.', 1;
 
     -- Get field configurations
     DECLARE @Fields TABLE (
