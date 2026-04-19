@@ -32,7 +32,7 @@ BEGIN
         THROW 50000, N'ObjectKey has no configured domain fields.', 1;
 
     -- Get field configurations
-    DECLARE @Fields TABLE (
+    CREATE TABLE #Fields (
         ComponentKey NVARCHAR(100),
         FieldKey NVARCHAR(100),
         PhysicalTable SYSNAME,
@@ -43,8 +43,13 @@ BEGIN
     );
 
     -- Fetch FK relationships
-    DECLARE @FKFields TABLE (TableName SYSNAME, ColumnName SYSNAME);
-    INSERT INTO @FKFields (TableName, ColumnName)
+    CREATE TABLE #FKFields (
+        TableName SYSNAME NOT NULL,
+        ColumnName SYSNAME NOT NULL,
+        PRIMARY KEY CLUSTERED (TableName, ColumnName)
+    );
+
+    INSERT INTO #FKFields (TableName, ColumnName)
     SELECT DISTINCT ChildTable, ChildColumn
     FROM dbo.MigrationTableRelationships WHERE IsActive = 1
     UNION
@@ -53,7 +58,7 @@ BEGIN
 
     -- Fetch fields with generators, sorted by: non-ctx first, then ctx-based
     -- EXCLUDE framework tables (CHANGES, MUTATION, CMF*) as they must be replayed in exact order
-    INSERT INTO @Fields (ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, IsFK, SortOrder)
+    INSERT INTO #Fields (ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, IsFK, SortOrder)
     SELECT 
         f.ComponentKey,
         f.FieldKey,
@@ -79,11 +84,13 @@ BEGIN
         END
     FROM dbo.MigrationDomainField f
     INNER JOIN dbo.MigrationDomainComponent c ON c.ObjectKey = f.ObjectKey AND c.ComponentKey = f.ComponentKey
-    LEFT JOIN @FKFields fk ON fk.TableName = c.PhysicalTable AND fk.ColumnName = f.PhysicalColumn
+    LEFT JOIN #FKFields fk ON fk.TableName = c.PhysicalTable AND fk.ColumnName = f.PhysicalColumn
     WHERE f.ObjectKey = @ObjectKey
       AND c.PhysicalTable NOT IN (N'CHANGES', N'MUTATION')
-      AND c.PhysicalTable NOT LIKE N'CMF%'
-    ORDER BY SortOrder, f.ComponentKey, f.FieldKey;
+      AND c.PhysicalTable NOT LIKE N'CMF%';
+
+    CREATE CLUSTERED INDEX IX_Fields_Sort
+    ON #Fields (SortOrder, ComponentKey, FieldKey);
 
     -- Build merged context from all captured tables.
     -- Preserve the previous overwrite semantics by taking the last value per lower-cased key
@@ -140,7 +147,7 @@ BEGIN
             
             DECLARE field_cursor CURSOR LOCAL FAST_FORWARD FOR
                 SELECT ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, IsFK
-                FROM @Fields
+                FROM #Fields
                 ORDER BY SortOrder, ComponentKey, FieldKey;
             
             OPEN field_cursor;
