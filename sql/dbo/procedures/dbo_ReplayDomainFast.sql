@@ -85,49 +85,39 @@ BEGIN
       AND c.PhysicalTable NOT LIKE N'CMF%'
     ORDER BY SortOrder, f.ComponentKey, f.FieldKey;
 
-    -- Build merged context from all captured tables
+    -- Build merged context from all captured tables.
+    -- Preserve the previous overwrite semantics by taking the last value per lower-cased key
+    -- in TableName/PkValue order.
     DECLARE @MergedContext NVARCHAR(MAX) = N'{}';
-    
-    DECLARE @TableName SYSNAME, @RowJson NVARCHAR(MAX);
-    DECLARE ctx_cursor CURSOR LOCAL FAST_FORWARD FOR
-        SELECT TableName, RowJson
-        FROM dbo.MigrationScenarioRow
-        WHERE RunID = @SourceRunID
-        ORDER BY TableName, PkValue;
-    
-    OPEN ctx_cursor;
-    FETCH NEXT FROM ctx_cursor INTO @TableName, @RowJson;
-    
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        IF @RowJson IS NOT NULL AND ISJSON(@RowJson) = 1
-        BEGIN
-            -- Merge all fields from this row into context
-            DECLARE @Key NVARCHAR(100), @Value NVARCHAR(MAX);
-            DECLARE json_cursor CURSOR LOCAL FAST_FORWARD FOR
-                SELECT [key], [value]
-                FROM OPENJSON(@RowJson);
-            
-            OPEN json_cursor;
-            FETCH NEXT FROM json_cursor INTO @Key, @Value;
-            
-            WHILE @@FETCH_STATUS = 0
-            BEGIN
-                IF @Value IS NOT NULL
-                    SET @MergedContext = JSON_MODIFY(@MergedContext, N'$.' + LOWER(@Key), JSON_VALUE(@RowJson, N'$.' + @Key));
-                
-                FETCH NEXT FROM json_cursor INTO @Key, @Value;
-            END
-            
-            CLOSE json_cursor;
-            DEALLOCATE json_cursor;
-        END
-        
-        FETCH NEXT FROM ctx_cursor INTO @TableName, @RowJson;
-    END
-    
-    CLOSE ctx_cursor;
-    DEALLOCATE ctx_cursor;
+
+    ;WITH ContextValues AS (
+        SELECT
+            LOWER(j.[key]) AS JsonKey,
+            CONVERT(NVARCHAR(MAX), j.[value]) AS JsonValue,
+            ROW_NUMBER() OVER (
+                PARTITION BY LOWER(j.[key])
+                ORDER BY r.TableName DESC, r.PkValue DESC
+            ) AS rn
+        FROM dbo.MigrationScenarioRow r
+        CROSS APPLY OPENJSON(r.RowJson) j
+        WHERE r.RunID = @SourceRunID
+          AND r.RowJson IS NOT NULL
+          AND ISJSON(r.RowJson) = 1
+          AND j.[value] IS NOT NULL
+          AND j.[type] IN (1, 2, 3)
+    )
+    SELECT
+        @MergedContext = COALESCE(
+            N'{' +
+            STRING_AGG(
+                N'"' + STRING_ESCAPE(JsonKey, 'json') + N'":"' + STRING_ESCAPE(JsonValue, 'json') + N'"',
+                N','
+            ) +
+            N'}',
+            N'{}'
+        )
+    FROM ContextValues
+    WHERE rn = 1;
 
     -- Process each item by calling ReplayScenarioRun directly
     DECLARE @Results TABLE (ItemIndex INT, ReplayRunID UNIQUEIDENTIFIER);
