@@ -38,6 +38,7 @@ BEGIN
         PhysicalTable SYSNAME,
         PhysicalColumn SYSNAME,
         Generator NVARCHAR(MAX),
+        ExampleValue NVARCHAR(MAX),
         IsFK BIT,
         SortOrder INT
     );
@@ -58,7 +59,7 @@ BEGIN
 
     -- Fetch fields with generators, sorted by: non-ctx first, then ctx-based
     -- EXCLUDE framework tables (CHANGES, MUTATION, CMF*) as they must be replayed in exact order
-    INSERT INTO #Fields (ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, IsFK, SortOrder)
+    INSERT INTO #Fields (ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, ExampleValue, IsFK, SortOrder)
     SELECT 
         f.ComponentKey,
         f.FieldKey,
@@ -76,6 +77,7 @@ BEGIN
                     END)))
             ELSE NULL
         END,
+        CONVERT(NVARCHAR(MAX), f.ExampleValue),
         CASE WHEN fk.ColumnName IS NOT NULL THEN 1 ELSE 0 END,
         CASE 
             WHEN f.Notes LIKE '%gen:%' AND f.Notes NOT LIKE '%ctx(%' THEN 1  -- Non-ctx generators first
@@ -143,15 +145,15 @@ BEGIN
             
             -- Evaluate each field in sorted order
             DECLARE @CompKey NVARCHAR(100), @FldKey NVARCHAR(100), @PhysTable SYSNAME, 
-                    @PhysCol SYSNAME, @Gen NVARCHAR(MAX), @IsFK BIT;
+                    @PhysCol SYSNAME, @Gen NVARCHAR(MAX), @ExampleValue NVARCHAR(MAX), @IsFK BIT;
             
             DECLARE field_cursor CURSOR LOCAL FAST_FORWARD FOR
-                SELECT ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, IsFK
+                SELECT ComponentKey, FieldKey, PhysicalTable, PhysicalColumn, Generator, ExampleValue, IsFK
                 FROM #Fields
                 ORDER BY SortOrder, ComponentKey, FieldKey;
             
             OPEN field_cursor;
-            FETCH NEXT FROM field_cursor INTO @CompKey, @FldKey, @PhysTable, @PhysCol, @Gen, @IsFK;
+            FETCH NEXT FROM field_cursor INTO @CompKey, @FldKey, @PhysTable, @PhysCol, @Gen, @ExampleValue, @IsFK;
             
             WHILE @@FETCH_STATUS = 0
             BEGIN
@@ -254,6 +256,16 @@ BEGIN
                     
                     IF @GeneratedValue IS NOT NULL
                     BEGIN
+                        DECLARE @CurrentContextValue NVARCHAR(MAX) = JSON_VALUE(@Context, N'$.' + LOWER(@FldKey));
+
+                        -- Most generators are ctx() and simply reproduce the already captured value.
+                        -- Skip override emission when nothing changes so replay only pays for actual variance.
+                        IF NOT (
+                            @Gen LIKE 'ctx(%'
+                            AND ISNULL(@GeneratedValue, N'') = ISNULL(@CurrentContextValue, N'')
+                            AND ISNULL(@GeneratedValue, N'') = ISNULL(@ExampleValue, N'')
+                        )
+                        BEGIN
                         -- Build overrides JSON for this table.column
                         DECLARE @TablePath NVARCHAR(200) = N'$.' + @PhysTable;
                         DECLARE @ColPath NVARCHAR(300) = @TablePath + N'.' + @PhysCol;
@@ -264,13 +276,15 @@ BEGIN
                         
                         -- Add column value
                         SET @Overrides = JSON_MODIFY(@Overrides, @ColPath, @GeneratedValue);
+                        END
                         
                         -- Update context for downstream fields
-                        SET @Context = JSON_MODIFY(@Context, N'$.' + LOWER(@FldKey), @GeneratedValue);
+                        IF ISNULL(@GeneratedValue, N'') <> ISNULL(@CurrentContextValue, N'')
+                            SET @Context = JSON_MODIFY(@Context, N'$.' + LOWER(@FldKey), @GeneratedValue);
                     END
                 END
                 
-                FETCH NEXT FROM field_cursor INTO @CompKey, @FldKey, @PhysTable, @PhysCol, @Gen, @IsFK;
+                FETCH NEXT FROM field_cursor INTO @CompKey, @FldKey, @PhysTable, @PhysCol, @Gen, @ExampleValue, @IsFK;
             END
             
             CLOSE field_cursor;
