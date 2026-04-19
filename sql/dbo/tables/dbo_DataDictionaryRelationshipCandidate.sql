@@ -26,6 +26,10 @@ BEGIN
 
     CREATE INDEX IX_DataDictionaryRelationshipCandidate_ParentChild
     ON dbo.DataDictionaryRelationshipCandidate (ParentTable, ChildTable);
+
+    CREATE INDEX IX_DataDictionaryRelationshipCandidate_ReplayLookup
+    ON dbo.DataDictionaryRelationshipCandidate (IsActive, Source, EvidenceRunID, ChildTable)
+    INCLUDE (ChildColumn, ParentTable, ParentColumn);
 END
 ELSE
 BEGIN
@@ -50,6 +54,9 @@ BEGIN
         IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.DataDictionaryRelationshipCandidate') AND name = N'IX_DataDictionaryRelationshipCandidate_ParentChild')
             DROP INDEX IX_DataDictionaryRelationshipCandidate_ParentChild ON dbo.DataDictionaryRelationshipCandidate;
 
+        IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.DataDictionaryRelationshipCandidate') AND name = N'IX_DataDictionaryRelationshipCandidate_ReplayLookup')
+            DROP INDEX IX_DataDictionaryRelationshipCandidate_ReplayLookup ON dbo.DataDictionaryRelationshipCandidate;
+
         ALTER TABLE dbo.DataDictionaryRelationshipCandidate ALTER COLUMN ParentTable NVARCHAR(512) NOT NULL;
         ALTER TABLE dbo.DataDictionaryRelationshipCandidate ALTER COLUMN ParentColumn NVARCHAR(512) NOT NULL;
         ALTER TABLE dbo.DataDictionaryRelationshipCandidate ALTER COLUMN ChildTable NVARCHAR(512) NOT NULL;
@@ -60,6 +67,23 @@ BEGIN
 
         CREATE INDEX IX_DataDictionaryRelationshipCandidate_ParentChild
         ON dbo.DataDictionaryRelationshipCandidate (ParentTable, ChildTable);
+
+        CREATE INDEX IX_DataDictionaryRelationshipCandidate_ReplayLookup
+        ON dbo.DataDictionaryRelationshipCandidate (IsActive, Source, EvidenceRunID, ChildTable)
+        INCLUDE (ChildColumn, ParentTable, ParentColumn);
     END
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.DataDictionaryRelationshipCandidate')
+      AND name = N'IX_DataDictionaryRelationshipCandidate_ReplayLookup'
+)
+BEGIN
+    CREATE INDEX IX_DataDictionaryRelationshipCandidate_ReplayLookup
+    ON dbo.DataDictionaryRelationshipCandidate (IsActive, Source, EvidenceRunID, ChildTable)
+    INCLUDE (ChildColumn, ParentTable, ParentColumn);
 END
 GO

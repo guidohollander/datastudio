@@ -19,3 +19,29 @@ BEGIN
     );
 END
 GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.MigrationTableRelationships')
+      AND name = N'IX_MigrationTableRelationships_ActiveChild'
+)
+BEGIN
+    CREATE INDEX IX_MigrationTableRelationships_ActiveChild
+    ON dbo.MigrationTableRelationships (IsActive, ChildTable, ChildColumn)
+    INCLUDE (ParentTable, ParentColumn, Source);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.MigrationTableRelationships')
+      AND name = N'IX_MigrationTableRelationships_ActiveParentChild'
+)
+BEGIN
+    CREATE INDEX IX_MigrationTableRelationships_ActiveParentChild
+    ON dbo.MigrationTableRelationships (IsActive, ParentTable, ChildTable)
+    INCLUDE (ChildColumn, ParentColumn, Source);
+END
+GO
