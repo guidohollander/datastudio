@@ -1,0 +1,96 @@
+-- Check for data issues in replayed records
+DECLARE @ReplayRunID UNIQUEIDENTIFIER;
+SELECT TOP 1 @ReplayRunID = ReplayRunID
+FROM dbo.MigrationScenarioReplayRun
+ORDER BY ReplayRunID DESC;
+
+-- Check for NULL or invalid status values
+PRINT '=== Status Values in Replayed Data ===';
+SELECT 
+    'INDIVIDUAL' AS TableName,
+    INDIVIDUALSTATUS,
+    COUNT(*) AS Count
+FROM SC_PERSONREGISTRATION_INDIVIDUAL
+WHERE INDIVIDUALRECORDID IN (
+    SELECT NewPkValue FROM dbo.MigrationScenarioReplayMap
+    WHERE ReplayRunID = @ReplayRunID AND TableName = 'SC_PERSONREGISTRATION_INDIVIDUAL'
+)
+GROUP BY INDIVIDUALSTATUS;
+
+SELECT 
+    'PROPERTIES' AS TableName,
+    CASESTATUS,
+    RESULTS,
+    COUNT(*) AS Count
+FROM SC_PERSONREGISTRATION_PROPERTIES
+WHERE CASEID IN (
+    SELECT NewPkValue FROM dbo.MigrationScenarioReplayMap
+    WHERE ReplayRunID = @ReplayRunID AND TableName = 'SC_PERSONREGISTRATION_PROPERTIES'
+)
+GROUP BY CASESTATUS, RESULTS;
+
+-- Check for NULL values in required fields
+PRINT '';
+PRINT '=== NULL Values in Required Fields ===';
+SELECT 
+    'INDIVIDUAL' AS TableName,
+    SUM(CASE WHEN FIRSTNAMES IS NULL THEN 1 ELSE 0 END) AS NullFirstNames,
+    SUM(CASE WHEN SURNAME IS NULL THEN 1 ELSE 0 END) AS NullSurname,
+    SUM(CASE WHEN INDIVIDUALSTATUS IS NULL THEN 1 ELSE 0 END) AS NullStatus,
+    SUM(CASE WHEN CASEID IS NULL THEN 1 ELSE 0 END) AS NullCaseID
+FROM SC_PERSONREGISTRATION_INDIVIDUAL
+WHERE INDIVIDUALRECORDID IN (
+    SELECT NewPkValue FROM dbo.MigrationScenarioReplayMap
+    WHERE ReplayRunID = @ReplayRunID AND TableName = 'SC_PERSONREGISTRATION_INDIVIDUAL'
+);
+
+-- Check CHANGES records
+PRINT '';
+PRINT '=== CHANGES Records ===';
+SELECT 
+    COUNT(*) AS TotalChanges,
+    SUM(CASE WHEN CHANGERECORDID IS NULL THEN 1 ELSE 0 END) AS NullChangeRecordID,
+    SUM(CASE WHEN CASEID IS NULL THEN 1 ELSE 0 END) AS NullCaseID,
+    SUM(CASE WHEN MUTATIONRECORDID IS NULL THEN 1 ELSE 0 END) AS NullMutationRecordID
+FROM CHANGES
+WHERE CHANGESRECORDID IN (
+    SELECT NewPkValue FROM dbo.MigrationScenarioReplayMap
+    WHERE ReplayRunID = @ReplayRunID AND TableName = 'CHANGES'
+);
+
+-- Check if CHANGERECORDID points to valid individuals
+PRINT '';
+PRINT '=== CHANGERECORDID Validation ===';
+SELECT 
+    c.CHANGESRECORDID,
+    c.CHANGERECORDID,
+    c.CASEID,
+    c.TOPICOFCHANGE,
+    CASE 
+        WHEN i.INDIVIDUALRECORDID IS NOT NULL THEN 'VALID'
+        ELSE 'BROKEN - NO INDIVIDUAL'
+    END AS Status
+FROM CHANGES c
+LEFT JOIN SC_PERSONREGISTRATION_INDIVIDUAL i ON i.INDIVIDUALRECORDID = c.CHANGERECORDID
+WHERE c.CHANGESRECORDID IN (
+    SELECT NewPkValue FROM dbo.MigrationScenarioReplayMap
+    WHERE ReplayRunID = @ReplayRunID AND TableName = 'CHANGES'
+)
+AND c.TOPICOFCHANGE = 'Individual';
+
+-- Check view data
+PRINT '';
+PRINT '=== View Data Check ===';
+SELECT TOP 5
+    CASEID,
+    INDIVIDUALNAME,
+    CASESTATUS,
+    CHANGESTATUS
+FROM vw_Individual_List
+WHERE CASEID IN (
+    SELECT i.CASEID FROM SC_PERSONREGISTRATION_INDIVIDUAL i
+    WHERE i.INDIVIDUALRECORDID IN (
+        SELECT NewPkValue FROM dbo.MigrationScenarioReplayMap
+        WHERE ReplayRunID = @ReplayRunID AND TableName = 'SC_PERSONREGISTRATION_INDIVIDUAL'
+    )
+);

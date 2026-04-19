@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "object": {
+    "objectKey": "individual",
+    "displayName": "Individual"
+  },
+  "components": [
+    {
+      "componentKey": "individual",
+      "displayName": "Individual",
+      "minOccurs": 1,
+      "maxOccurs": 1,
+      "fields": [
+        { "fieldKey": "firstNames", "type": "string", "required": true, "maxLength": 60, "example": "John" },
+        { "fieldKey": "surname", "type": "string", "required": true, "maxLength": 60, "example": "Doe" }
+      ]
+    },
+    {
+      "componentKey": "properties",
+      "displayName": "Properties",
+      "minOccurs": 1,
+      "maxOccurs": 1,
+      "fields": [
+        { "fieldKey": "dateOfBirth", "type": "date", "required": false, "example": "1970-01-01" },
+        { "fieldKey": "gender", "type": "string", "required": false, "enumKey": "gender", "example": "Male" }
+      ]
+    },
+    {
+      "componentKey": "personIdentification",
+      "displayName": "Person identification",
+      "minOccurs": 0,
+      "maxOccurs": null,
+      "fields": [
+        { "fieldKey": "identificationNumber", "type": "string", "required": true, "example": "123456789" },
+        { "fieldKey": "identificationType", "type": "string", "required": false, "example": "BSN" }
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "enumKey": "gender",
+      "displayName": "Gender",
+      "values": [
+        { "valueKey": "Male", "displayName": "Male" },
+        { "valueKey": "Female", "displayName": "Female" }
+      ]
+    }
+  ],
+  "lookups": []
+}

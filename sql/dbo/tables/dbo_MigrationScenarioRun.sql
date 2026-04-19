@@ -1,0 +1,19 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+IF OBJECT_ID(N'dbo.MigrationScenarioRun', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.MigrationScenarioRun (
+        RunID UNIQUEIDENTIFIER NOT NULL,
+        ScenarioID INT NOT NULL,
+        StartedAt DATETIME2 NOT NULL CONSTRAINT DF_MigrationScenarioRun_StartedAt DEFAULT (SYSUTCDATETIME()),
+        EndedAt DATETIME2 NULL,
+        SnapshotID UNIQUEIDENTIFIER NULL,
+        Notes NVARCHAR(1000) NULL,
+        CONSTRAINT PK_MigrationScenarioRun PRIMARY KEY CLUSTERED (RunID)
+    );
+END
+GO

@@ -1,0 +1,16 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE OR ALTER PROCEDURE dbo.GetScenarios
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT ScenarioID, Name, CreatedAt, Notes
+    FROM dbo.MigrationScenario
+    ORDER BY Name;
+END
+GO

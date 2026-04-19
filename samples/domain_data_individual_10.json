@@ -1,0 +1,65 @@
+{
+  "objectKey": "individual",
+  "items": [
+    {
+      "externalId": "ind-0001",
+      "individual": { "firstNames": "Maarten 1", "surname": "Amersfoort 1" },
+      "properties": { "dateOfBirth": "1970-01-01", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000001", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0002",
+      "individual": { "firstNames": "Maarten 2", "surname": "Amersfoort 2" },
+      "properties": { "dateOfBirth": "1970-01-02", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000002", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0003",
+      "individual": { "firstNames": "Maarten 3", "surname": "Amersfoort 3" },
+      "properties": { "dateOfBirth": "1970-01-03", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000003", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0004",
+      "individual": { "firstNames": "Maarten 4", "surname": "Amersfoort 4" },
+      "properties": { "dateOfBirth": "1970-01-04", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000004", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0005",
+      "individual": { "firstNames": "Maarten 5", "surname": "Amersfoort 5" },
+      "properties": { "dateOfBirth": "1970-01-05", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000005", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0006",
+      "individual": { "firstNames": "Maarten 6", "surname": "Amersfoort 6" },
+      "properties": { "dateOfBirth": "1970-01-06", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000006", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0007",
+      "individual": { "firstNames": "Maarten 7", "surname": "Amersfoort 7" },
+      "properties": { "dateOfBirth": "1970-01-07", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000007", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0008",
+      "individual": { "firstNames": "Maarten 8", "surname": "Amersfoort 8" },
+      "properties": { "dateOfBirth": "1970-01-08", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000008", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0009",
+      "individual": { "firstNames": "Maarten 9", "surname": "Amersfoort 9" },
+      "properties": { "dateOfBirth": "1970-01-09", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000009", "identificationType": "BSN" } ]
+    },
+    {
+      "externalId": "ind-0010",
+      "individual": { "firstNames": "Maarten 10", "surname": "Amersfoort 10" },
+      "properties": { "dateOfBirth": "1970-01-10", "gender": "Male" },
+      "personIdentification": [ { "identificationNumber": "100000010", "identificationType": "BSN" } ]
+    }
+  ]
+}

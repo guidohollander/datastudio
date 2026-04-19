@@ -1,0 +1,64 @@
+i created an export of all settings and I noticed that custom labels for fields are not exposed, not in the export, so not in the API. Add them because it is important for the consumer.
+
+I still dont see the custom label that I set in the fields editor, it should contain 'Appeal submission deadline days after notice' for field APPEAL_SUBMISSION_DEADLINE_DAYS_AFTER_NOTICE of settingsKey PT_APPEAL_DEADLINES
+[
+  {
+    "SettingId": 22,
+    "SettingKey": "PT_APPEAL_DEADLINES",
+    "FriendlyName": "Appeal Deadlines",
+    "CategoryCode": "PropertyTax/Compliance",
+    "Description": "Deadlines for submitting appeals against property tax assessments.",
+    "IsMasterData": false,
+    "TemporalType": "None",
+    "Fields": [
+      {
+        "FieldName": "_GUID",
+        "DataType": "uniqueidentifier",
+        "IsMandatory": true,
+        "IsKey": true,
+        "IsGroupingKey": false,
+        "IsMigrateKey": false,
+        "IsLookup": 0
+      },
+      {
+        "FieldName": "ALLOW_LATE_APPEALS",
+        "DataType": "bit",
+        "IsMandatory": true,
+        "IsKey": false,
+        "IsGroupingKey": false,
+        "IsMigrateKey": false,
+        "IsLookup": 0
+      },
+      {
+        "FieldName": "APPEAL_SUBMISSION_DEADLINE_DAYS_AFTER_NOTICE",
+        "DataType": "int",
+        "IsMandatory": true,
+        "IsKey": false,
+        "IsGroupingKey": false,
+        "IsMigrateKey": false,
+        "IsLookup": 0
+      },
+      {
+        "FieldName": "LATE_APPEAL_MAX_DAYS",
+        "DataType": "int",
+        "IsMandatory": true,
+        "IsKey": false,
+        "IsGroupingKey": false,
+        "IsMigrateKey": false,
+        "IsLookup": 0
+      }
+    ],
+    "Data": [
+      {
+        "_GUID": "a34deb1e-54cb-4c05-9297-d50aa67f54f9",
+        "ALLOW_LATE_APPEALS": "false",
+        "APPEAL_SUBMISSION_DEADLINE_DAYS_AFTER_NOTICE": "30",
+        "LATE_APPEAL_MAX_DAYS": "0"
+      }
+    ],
+    "TotalCount": 1,
+    "Offset": 0,
+    "Limit": 1000,
+    "LastModified": "2026-03-05T11:26:29.4233333"
+  }
+]
