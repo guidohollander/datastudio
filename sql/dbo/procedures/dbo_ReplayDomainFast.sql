@@ -91,6 +91,14 @@ BEGIN
       AND c.PhysicalTable NOT IN (N'CHANGES', N'MUTATION')
       AND c.PhysicalTable NOT LIKE N'CMF%';
 
+    -- Remove pass-through self-context fields from the hot path.
+    -- When a field is exactly gen: ctx(<same field>) it does not add variance and the
+    -- captured source row already carries the correct value into replay.
+    DELETE f
+    FROM #Fields f
+    WHERE f.Generator IS NOT NULL
+      AND LOWER(REPLACE(REPLACE(f.Generator, N' ', N''), CHAR(9), N'')) = N'ctx(' + LOWER(f.FieldKey) + N')';
+
     CREATE CLUSTERED INDEX IX_Fields_Sort
     ON #Fields (SortOrder, ComponentKey, FieldKey);
 
