@@ -266,13 +266,10 @@ BEGIN
                     BEGIN
                         DECLARE @CurrentContextValue NVARCHAR(MAX) = JSON_VALUE(@Context, N'$.' + LOWER(@FldKey));
 
-                        -- Most generators are ctx() and simply reproduce the already captured value.
-                        -- Skip override emission when nothing changes so replay only pays for actual variance.
-                        IF NOT (
-                            @Gen LIKE 'ctx(%'
-                            AND ISNULL(@GeneratedValue, N'') = ISNULL(@CurrentContextValue, N'')
-                            AND ISNULL(@GeneratedValue, N'') = ISNULL(@ExampleValue, N'')
-                        )
+                        -- Skip override emission when the generated value matches the captured example.
+                        -- The source row already contains that value, so we only need to update in-memory
+                        -- context for downstream generators, not pay JSON override cost.
+                        IF ISNULL(@GeneratedValue, N'') <> ISNULL(@ExampleValue, N'')
                         BEGIN
                         -- Build overrides JSON for this table.column
                         DECLARE @TablePath NVARCHAR(200) = N'$.' + @PhysTable;
