@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import { execProc } from "@/lib/db";
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as {
+  let body: {
     runId?: string;
     objectKey?: string;
     displayName?: string;
   };
+
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
+  }
 
   const runId = body.runId?.trim();
   const objectKey = body.objectKey?.trim() || null;
